@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+)
 
 // Config holds process settings. Empty DatabaseURL means the API runs without Postgres.
 type Config struct {
@@ -8,8 +12,10 @@ type Config struct {
 	DatabaseURL string
 }
 
-// Load reads configuration from the environment.
+// Load reads .env from the working directory, then the process environment.
+// A variable already set in the shell is left unchanged.
 func Load() Config {
+	_ = godotenv.Load()
 	return Config{
 		Addr:        getenv("ADDR", ":8080"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),

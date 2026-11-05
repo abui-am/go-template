@@ -1,0 +1,142 @@
+# Edit this file when you add a route. Each operation needs a unique operationId.
+# Restart the server, then refresh http://localhost:8080/swagger/index.html
+openapi: 3.0.3
+info:
+  title: API
+  version: "1.0"
+  description: Todo example served by the Go boilerplate.
+# Empty security means these routes are public. Replace this when you add auth.
+security: []
+servers:
+  - url: http://localhost:8080
+    description: Local
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /api/todos:
+    get:
+      operationId: listTodos
+      summary: List todos
+      responses:
+        "200":
+          description: Todos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodoList"
+    post:
+      operationId: createTodo
+      summary: Create a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTodo"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "400":
+          description: Invalid title
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/todos/{id}:
+    patch:
+      operationId: updateTodo
+      summary: Mark a todo done or not done
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTodo"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTodo
+      summary: Delete a todo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Todo:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        done:
+          type: boolean
+    TodoList:
+      type: object
+      properties:
+        todos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Todo"
+    CreateTodo:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+    UpdateTodo:
+      type: object
+      properties:
+        done:
+          type: boolean
+    Error:
+      type: object
+      properties:
+        error:
+          type: string

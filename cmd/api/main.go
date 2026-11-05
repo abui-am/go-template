@@ -13,6 +13,7 @@ import (
 	"go-boilerplate/internal/config"
 	"go-boilerplate/internal/database"
 	"go-boilerplate/internal/server"
+	"go-boilerplate/internal/todo"
 )
 
 func main() {
@@ -20,18 +21,18 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	app := &server.App{}
-	if cfg.DatabaseURL != "" {
-		db, err := database.Open(ctx, cfg.DatabaseURL)
-		if err != nil {
-			log.Fatalf("database: %v", err)
-		}
-		defer database.Close(db)
-		// Add private row structs when the interview needs tables:
-		// if err := database.Migrate(ctx, db, &itemRow{}); err != nil {
-		//     log.Fatalf("migrate: %v", err)
-		// }
-		app.DB = db
+	if cfg.DatabaseURL == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+	db, err := database.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("database: %v", err)
+	}
+	defer database.Close(db)
+
+	app := &server.App{DB: db}
+	if err := app.Use(ctx, todo.New(db)); err != nil {
+		log.Fatalf("modules: %v", err)
 	}
 
 	httpServer := &http.Server{
