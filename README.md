@@ -15,7 +15,22 @@ curl -s -X PATCH localhost:8080/api/todos/ID -H 'content-type: application/json'
 curl -s -X DELETE localhost:8080/api/todos/ID
 ```
 
-Todos are stored in the `todos` table. The public `Todo` struct has no GORM tags.
+Todos are stored in `todos`. A reminder is a separate `reminders` row whose primary key is `todo_id`, so a todo has at most one (one-to-one). Tags are shared through the `todo_tags` join table (many-to-many): a todo can have many tags, and a tag can be on many todos. The public `Todo` struct has no GORM tags.
+
+```bash
+curl -s -X PUT localhost:8080/api/todos/ID/reminder \
+  -H 'content-type: application/json' \
+  -d '{"due_at":"2026-11-07T09:00:00Z","channel":"push"}'
+curl -s -X DELETE localhost:8080/api/todos/ID/reminder
+
+curl -s localhost:8080/api/tags -H 'content-type: application/json' -d '{"name":"errands"}'
+curl -s -X PUT localhost:8080/api/todos/ID/tags \
+  -H 'content-type: application/json' \
+  -d '{"tag_ids":["TAG_ID"]}'
+curl -s localhost:8080/api/tags/TAG_ID/todos
+```
+
+`GET /api/todos` includes `reminder` and `tags` on each todo. Putting the reminder again updates that same row. Putting tags replaces the join rows for that todo. Deleting a todo removes its reminder and its join rows; the tag rows stay.
 
 ## Run
 

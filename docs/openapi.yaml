@@ -4,7 +4,9 @@ openapi: 3.0.3
 info:
   title: API
   version: "1.0"
-  description: Todo example served by the Go boilerplate.
+  description: |
+    Todo example served by the Go boilerplate.
+    A reminder is one-to-one with a todo. Tags are many-to-many through todo_tags.
 # Empty security means these routes are public. Replace this when you add auth.
 security: []
 servers:
@@ -106,7 +108,144 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/todos/{id}/reminder:
+    put:
+      operationId: setTodoReminder
+      summary: Set the one reminder for a todo
+      description: Replaces the existing reminder when the todo already has one.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetReminder"
+      responses:
+        "200":
+          description: Todo with its reminder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "400":
+          description: Invalid reminder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTodoReminder
+      summary: Remove the reminder from a todo
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Todo or reminder not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/todos/{id}/tags:
+    put:
+      operationId: setTodoTags
+      summary: Replace the tags on a todo
+      description: Writes the todo_tags pairs for this todo. An empty tag_ids list clears them.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetTags"
+      responses:
+        "200":
+          description: Todo with its tags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          description: Todo or tag not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/tags:
+    get:
+      operationId: listTags
+      summary: List tags
+      responses:
+        "200":
+          description: Tags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagList"
+    post:
+      operationId: createTag
+      summary: Create a tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTag"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "400":
+          description: Invalid name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Name already used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/tags/{id}/todos:
+    get:
+      operationId: listTodosByTag
+      summary: List todos that have this tag
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Tag and its todos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagTodos"
+        "404":
+          description: Tag not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     Todo:
       type: object
@@ -117,6 +256,30 @@ components:
           type: string
         done:
           type: boolean
+        reminder:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Reminder"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tag"
+    Reminder:
+      type: object
+      required: [due_at, channel]
+      properties:
+        due_at:
+          type: string
+          format: date-time
+        channel:
+          type: string
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
     TodoList:
       type: object
       properties:
@@ -135,6 +298,45 @@ components:
       properties:
         done:
           type: boolean
+    SetReminder:
+      type: object
+      required: [due_at, channel]
+      properties:
+        due_at:
+          type: string
+          format: date-time
+        channel:
+          type: string
+    SetTags:
+      type: object
+      required: [tag_ids]
+      properties:
+        tag_ids:
+          type: array
+          items:
+            type: string
+    CreateTag:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+    TagList:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tag"
+    TagTodos:
+      type: object
+      properties:
+        tag:
+          $ref: "#/components/schemas/Tag"
+        todos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Todo"
     Error:
       type: object
       properties:
